@@ -33,11 +33,14 @@ const potWidth = 60;
 let needsInit;
 let preCooking;
 let cooking;
+let postCooking;
 let cornCooked;
 let catchTimer;
 let cornLost;
 let kernelArray;
 let cookedArray;
+let flameArray;
+let nextFlameTicks;
 let multiplier;
 
 function update() {  
@@ -56,6 +59,7 @@ function update() {
     };
     preCooking = true;
     cooking = false;
+    postCooking = false;
     cornCooked = 0;
     cornLost = 0;
     kernelArray = [];
@@ -69,6 +73,23 @@ function update() {
       });
     }
     needsInit = false;
+  }
+
+  if (input.isPressed && ticks > 30) {
+    if (postCooking) {
+      // move lid right
+    } else if (!cooking) {
+      cooking = true;
+      preCooking = false;
+    }
+  }
+  if (input.isJustReleased) {
+    if (postCooking) {
+      // move lid left
+    } else if (cooking) {
+      cooking = false;
+      postCooking = true;
+    }
   }
 
   // Do not draw objects in this block as they will disappear
