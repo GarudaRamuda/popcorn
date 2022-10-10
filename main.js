@@ -52,7 +52,7 @@ function update() {
     };
     lid = {
       pos: vec(20 + potWidth/2, 20 + potHeight),
-      vel: vec(0, 0);
+      vel: vec(0, 0),
       angle: 0,
     };
     preCooking = true;
@@ -67,7 +67,7 @@ function update() {
       kernelArray.push({
         pos: vec(0,0),
         vel: vec(0,0),
-      })
+      });
     }
   }
 
