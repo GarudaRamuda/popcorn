@@ -9,7 +9,7 @@ characters = [
   `
   ll
 llllll
-  `
+  `,
   `
   yyy 
  yy  y
@@ -17,11 +17,10 @@ yyyy y
 yyyyyy
  yyyy 
   yy  
-  `
+  `,
 ];
 
 options = {
-  theme: "pixel",
   isPlayingBgm: true,
   isReplayEnabled: true,
 };
@@ -29,7 +28,7 @@ options = {
 let pot;
 /** @type {{pos: Vector, vel: Vector, angle: Number}} */
 let lid;
-const potHeight = 30;
+const potHeight = 35;
 const potWidth = 60;
 let needsInit;
 let preCooking;
@@ -47,7 +46,7 @@ function update() {
   }
   if (needsInit) {
     pot = {
-      pos: vec(20, 20),
+      pos: vec(20, 90), // Corresponds to left corner of pot
       vel: vec(0, 0),
     };
     lid = {
@@ -69,11 +68,21 @@ function update() {
         vel: vec(0,0),
       });
     }
+    needsInit = false;
   }
 
+  // Do not draw objects in this block as they will disappear
+  // the instant the button releases.
   if (preCooking || cooking) {
     // perform all kernel physics handling in this block
   }
+  line(pot.pos, vec(pot.pos).add(potWidth, 0));
+  line(pot.pos, vec(pot.pos).add(0, -potHeight));
+  line(vec(pot.pos).add(potWidth, 0), vec(pot.pos).add(potWidth, -potHeight));
+  char("a", pot.pos.x + potWidth / 2, pot.pos.y - potHeight - 7, 
+    {
+      scale: {x: 11, y: 3},
+    });
 }
 
 addEventListener("load", onLoad);
