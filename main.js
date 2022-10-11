@@ -80,7 +80,7 @@ function update() {
     needsInit = false;
   }
 
-  if (input.isPressed && ticks > 30) {
+  if (input.isPressed && ticks > 60) {
     if (postCooking) {
       // move lid right
     } else if (!cooking) {
@@ -99,7 +99,7 @@ function update() {
   // Do not draw objects in this block as they will disappear
   // the instant the button releases.
   if (preCooking || cooking) {
-    ++nextFlameTicks;
+    if (cooking) ++nextFlameTicks;
     // perform all kernel physics handling in this block
 
     // we also perform the spawning (not handling!) of all flame particles in this block
@@ -125,7 +125,7 @@ function update() {
     // adjust the flames position using its velocity
 
     // draw a box at flame's current position
-
+    box(vec(f.pos), 3);
 
     // also have room to mess with the flame's velocity; apply random scalars to simulate
     // air friction or air currents; could also use a sin() or cos() to generate wave motion
@@ -133,7 +133,7 @@ function update() {
     // also feel free to add stuff like spawn particles off the flames randomly
 
     // kill the flame if too old
-    if (lifetime <= 0) {
+    if (f.lifetime <= 0) {
       return true;
     }
   })
