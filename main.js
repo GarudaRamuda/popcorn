@@ -83,13 +83,12 @@ function update() {
       preCooking = false;
     }
   }
-  if (input.isJustReleased) {
-    if (postCooking) {
-      // move lid left
-    } else if (cooking) {
-      cooking = false;
-      postCooking = true;
-    }
+  if (postCooking && !(input.isPressed)) {
+    // move lid left
+  }
+  if (input.isJustReleased && cooking) {
+    cooking = false;
+    postCooking = true;
   }
 
   // Do not draw objects in this block as they will disappear
