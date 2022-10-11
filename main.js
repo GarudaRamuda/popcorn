@@ -37,8 +37,11 @@ let postCooking;
 let cornCooked;
 let catchTimer;
 let cornLost;
+/** @type {{pos: Vector, vel: Vector}} */
 let kernelArray;
+/** @type {{pos: Vector, vel: Vector}} */
 let cookedArray;
+/** @type {{pos: Vector, vel: Vector, lifetime: Number}} */
 let flameArray;
 let nextFlameTicks;
 let multiplier;
@@ -64,6 +67,8 @@ function update() {
     cornLost = 0;
     kernelArray = [];
     cookedArray = [];
+    flameArray = [];
+    nextFlameTicks = 0;
     multiplier = difficulty;
 
     for (i = 0; i < 15; i++) {
@@ -94,7 +99,18 @@ function update() {
   // Do not draw objects in this block as they will disappear
   // the instant the button releases.
   if (preCooking || cooking) {
+    ++nextFlameTicks;
     // perform all kernel physics handling in this block
+
+    // we also perform the spawning (not handling!) of all flame particles in this block
+    if (nextFlameTicks >= 10) {
+      nextFlameTicks = 0;
+      flameArray.push({
+        pos: vec(pot.pos.x + rnd(potWidth), 100), // spawn the particle under the pot
+        vel: vec(rnds(1), rnd(-1, 0)), // particle has random direction and speed
+        lifetime: rndi(90, 120), // decrement every frame, remove when reaches 0
+      })
+    }
   }
   line(pot.pos, vec(pot.pos).add(potWidth, 0));
   line(pot.pos, vec(pot.pos).add(0, -potHeight));
@@ -103,6 +119,24 @@ function update() {
     {
       scale: {x: 11, y: 3},
     });
+
+  // this is where we can actually handle moving and drawing the flame particles we spawned
+  remove(flameArray, (f) => {
+    // adjust the flames position using its velocity
+
+    // draw a box at flame's current position
+
+
+    // also have room to mess with the flame's velocity; apply random scalars to simulate
+    // air friction or air currents; could also use a sin() or cos() to generate wave motion
+    // and apply to one of the axes of velocity
+    // also feel free to add stuff like spawn particles off the flames randomly
+
+    // kill the flame if too old
+    if (lifetime <= 0) {
+      return true;
+    }
+  })
 }
 
 addEventListener("load", onLoad);
