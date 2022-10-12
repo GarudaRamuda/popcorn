@@ -75,6 +75,7 @@ function update() {
     nextPopTicks = 30;
     multiplier = difficulty;
     rotComplete = false;
+    angle = 0;
 
     for (i = 0; i < 9; i++) {
       kernelArray.push({
@@ -148,9 +149,13 @@ function update() {
   // this is where we can actually handle moving and drawing the flame particles we spawned
   remove(flameArray, (f) => {
     // adjust the flames position using its velocity
+    color("yellow");
+    particle(50, 99, 1, .7, angle + PI);
+    color("red");
+    particle(50, 102, 1, .7, sin(0.2));
 
     // draw a box at flame's current position
-    box(vec(f.pos), 3);
+    //box(vec(f.pos), 3);
 
     // also have room to mess with the flame's velocity; apply random scalars to simulate
     // air friction or air currents; could also use a sin() or cos() to generate wave motion
