@@ -46,6 +46,7 @@ let flameArray;
 let nextFlameTicks;
 let nextPopTicks;
 let multiplier;
+let rotComplete;
 
 function update() {  
   if (!ticks) {
@@ -57,8 +58,8 @@ function update() {
       vel: vec(0, 0),
     };
     lid = {
-      pos: vec(20 + potWidth/2, 20 + potHeight),
-      anchor: vec(20, 20 + potHeight),
+      pos: vec(20 + potWidth/2, 20 + potHeight - 3),
+      anchor: vec(20, 20 + potHeight - 3),
       vel: vec(0, 0),
       angle: 0,
     };
@@ -73,6 +74,7 @@ function update() {
     nextFlameTicks = 30;
     nextPopTicks = 30;
     multiplier = difficulty;
+    rotComplete = false;
 
     for (i = 0; i < 9; i++) {
       kernelArray.push({
@@ -122,14 +124,25 @@ function update() {
       })
     }
   }
+  
+  if (postCooking) {
+    if (lid.anchor.x > 14) lid.anchor.x -= 0.5;
+    if (lid.angle > -PI / 2) {
+      lid.angle -= 0.075
+    } else {
+      rotComplete = true;
+    }
+  }
   color("light_cyan");
   line(pot.pos, vec(pot.pos).add(potWidth, 0));
   color("cyan");
   line(pot.pos, vec(pot.pos).add(0, -potHeight));
   line(vec(pot.pos).add(potWidth, 0), vec(pot.pos).add(potWidth, -potHeight));
-  char("a", pot.pos.x + potWidth / 2, pot.pos.y - potHeight - 5, 
+  lid.pos = vec(lid.anchor).addWithAngle(lid.angle, potWidth / 2);
+  char("a", lid.pos, 
     {
-      scale: {x: 12, y: 3},
+      scale: {x: 12 * Math.cos(lid.angle) - 3 * Math.sin(lid.angle), y: 12 * Math.sin(lid.angle) + 3 * Math.cos(lid.angle)},
+      rotation: lid.angle / (PI / 2),
     });
 
   // this is where we can actually handle moving and drawing the flame particles we spawned
