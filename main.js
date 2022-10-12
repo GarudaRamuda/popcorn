@@ -26,7 +26,7 @@ options = {
 };
 /** @type {{pos: Vector, vel: Vector}}*/
 let pot;
-/** @type {{pos: Vector, vel: Vector, angle: Number}} */
+/** @type {{pos: Vector, anchor: Vector, vel: Vector, angle: Number}} */
 let lid;
 const potHeight = 35;
 const potWidth = 60;
@@ -37,13 +37,14 @@ let postCooking;
 let cornCooked;
 let catchTimer;
 let cornLost;
-/** @type {{pos: Vector, vel: Vector}} */
+/** @type {{pos: Vector, pastPos: Vector, vel: Vector}} */
 let kernelArray;
-/** @type {{pos: Vector, vel: Vector}} */
+/** @type {{pos: Vector, pastPos: Vector, vel: Vector}} */
 let cookedArray;
 /** @type {{pos: Vector, vel: Vector, lifetime: Number}} */
 let flameArray;
 let nextFlameTicks;
+let nextPopTicks;
 let multiplier;
 
 function update() {  
@@ -57,6 +58,7 @@ function update() {
     };
     lid = {
       pos: vec(20 + potWidth/2, 20 + potHeight),
+      anchor: vec(20, 20 + potHeight),
       vel: vec(0, 0),
       angle: 0,
     };
@@ -68,12 +70,14 @@ function update() {
     kernelArray = [];
     cookedArray = [];
     flameArray = [];
-    nextFlameTicks = 0;
+    nextFlameTicks = 12;
+    nextPopTicks = 12;
     multiplier = difficulty;
 
-    for (i = 0; i < 15; i++) {
+    for (i = 0; i < 9; i++) {
       kernelArray.push({
-        pos: vec(0,0),
+        pos: vec(50 + rnd(-20, 20),50),
+        pastPos: vec(50, 50),
         vel: vec(0,0),
       });
     }
@@ -98,13 +102,14 @@ function update() {
 
   // Do not draw objects in this block as they will disappear
   // the instant the button releases.
-  if (preCooking || cooking) {
-    if (cooking) ++nextFlameTicks;
-    // perform all kernel physics handling in this block
+  if (cooking) {
+    --nextFlameTicks;
+    --nextPopTicks;
+
 
     // we also perform the spawning (not handling!) of all flame particles in this block
-    if (nextFlameTicks >= 10) {
-      nextFlameTicks = 0;
+    if (nextFlameTicks <= 0) {
+      nextFlameTicks = rndi(10, 15);
       flameArray.push({
         pos: vec(pot.pos.x + rnd(potWidth), 100), // spawn the particle under the pot
         vel: vec(rnds(1), rnd(-1, 0)), // particle has random direction and speed
@@ -112,7 +117,9 @@ function update() {
       })
     }
   }
+  color("light_cyan");
   line(pot.pos, vec(pot.pos).add(potWidth, 0));
+  color("cyan");
   line(pot.pos, vec(pot.pos).add(0, -potHeight));
   line(vec(pot.pos).add(potWidth, 0), vec(pot.pos).add(potWidth, -potHeight));
   char("a", pot.pos.x + potWidth / 2, pot.pos.y - potHeight - 7, 
@@ -137,6 +144,56 @@ function update() {
       return true;
     }
   })
+
+  remove(kernelArray, (k) => {
+    k.pastPos.set(k.pos);
+    k.vel.y += 0.1;
+    k.vel.mul(0.98);
+    k.pos.add(k.vel);
+    color("black");
+    const c = box(k.pos, 3).isColliding;
+    if (c.rect.black || c.char.b) {
+      color("transparent");
+      const cx = arc(k.pastPos.x, k.pos.y, 3).isColliding;
+      const cy = arc(k.pos.x, k.pastPos.y, 3).isColliding;
+      // may desire to comment this out later
+      if (!(cx.rect.black || cx.char.b)) {
+        reflect(k, k.vel.x > 0 ? -PI : 0);
+      }
+      if (!(cy.rect.black || cy.char.b)) {
+        reflect(k, k.vel.y > 0 ? -PI / 2 : PI / 2);
+      }
+    }
+    if (c.char.a) {
+      reflect(k, PI / 2);
+    }
+    if (c.rect.cyan) {
+      reflect(k, k.pos.x < 50 ? 0 : PI, "cyan");
+    }
+    color("transparent");
+    let cF = box(vec(k.pos).add(k.vel), 3).isColliding;
+    while (cF.rect.light_cyan) {
+      k.vel.y -= 0.1;
+      cF = box(vec(k.pos).add(k.vel), 3).isColliding;
+    }
+  })
+}
+// Original code by Kenta Cho
+// https://github.com/abagames
+function reflect(b, a, c) {
+  const oa = wrap(b.vel.angle - a - PI, -PI, PI);
+  if (abs(oa) < PI / 2) {
+    b.vel.addWithAngle(a, b.vel.length * cos(oa) * 1.7);
+  }
+  if (c != null) {
+    color("transparent");
+    for (let i = 0; i < 9; i++) {
+      b.pos.addWithAngle(a, 1);
+      if (!arc(b.pos, ballRadius).isColliding.rect[c]) {
+        break;
+      }
+    }
+  }
 }
 
 addEventListener("load", onLoad);
