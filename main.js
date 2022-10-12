@@ -70,8 +70,8 @@ function update() {
     kernelArray = [];
     cookedArray = [];
     flameArray = [];
-    nextFlameTicks = 12;
-    nextPopTicks = 12;
+    nextFlameTicks = 30;
+    nextPopTicks = 30;
     multiplier = difficulty;
 
     for (i = 0; i < 9; i++) {
@@ -106,10 +106,15 @@ function update() {
     --nextFlameTicks;
     --nextPopTicks;
 
-
+    if (nextPopTicks <= 0) {
+      nextPopTicks = rndi(30, 60);
+      let pop = kernelArray.pop();
+      pop.vel = vec(pop.vel).add(rnd(-4, 4), rnd(-6, -4));
+      cookedArray.push(pop);
+    }
     // we also perform the spawning (not handling!) of all flame particles in this block
     if (nextFlameTicks <= 0) {
-      nextFlameTicks = rndi(10, 15);
+      nextFlameTicks = rndi(30, 45);
       flameArray.push({
         pos: vec(pot.pos.x + rnd(potWidth), 100), // spawn the particle under the pot
         vel: vec(rnds(1), rnd(-1, 0)), // particle has random direction and speed
@@ -122,9 +127,9 @@ function update() {
   color("cyan");
   line(pot.pos, vec(pot.pos).add(0, -potHeight));
   line(vec(pot.pos).add(potWidth, 0), vec(pot.pos).add(potWidth, -potHeight));
-  char("a", pot.pos.x + potWidth / 2, pot.pos.y - potHeight - 7, 
+  char("a", pot.pos.x + potWidth / 2, pot.pos.y - potHeight - 5, 
     {
-      scale: {x: 11, y: 3},
+      scale: {x: 12, y: 3},
     });
 
   // this is where we can actually handle moving and drawing the flame particles we spawned
@@ -140,18 +145,20 @@ function update() {
     // also feel free to add stuff like spawn particles off the flames randomly
 
     // kill the flame if too old
+    --f.lifetime;
     if (f.lifetime <= 0) {
       return true;
     }
   })
 
   remove(kernelArray, (k) => {
+    let kernelDim = 3;
     k.pastPos.set(k.pos);
     k.vel.y += 0.1;
     k.vel.mul(0.98);
     k.pos.add(k.vel);
     color("black");
-    const c = box(k.pos, 3).isColliding;
+    const c = box(k.pos, kernelDim).isColliding;
     if (c.rect.black || c.char.b) {
       color("transparent");
       const cx = arc(k.pastPos.x, k.pos.y, 3).isColliding;
@@ -171,10 +178,47 @@ function update() {
       reflect(k, k.pos.x < 50 ? 0 : PI, "cyan");
     }
     color("transparent");
-    let cF = box(vec(k.pos).add(k.vel), 3).isColliding;
-    while (cF.rect.light_cyan) {
-      k.vel.y -= 0.1;
-      cF = box(vec(k.pos).add(k.vel), 3).isColliding;
+    while (k.pos.y + k.vel.y > pot.pos.y - kernelDim)
+    {
+      if (k.vel.y > 0) k.vel.y *= -0.8;
+      k.pos.y += -0.1;
+    }
+  })
+
+  remove(cookedArray, (k) => {
+    k.pastPos.set(k.pos);
+    if (k.vel.y < 0.5 && rnd() > 0.996 && cooking)
+    {
+      k.vel = vec(k.vel).add(rnd(-2.5, 2.5), rnd(-3, -2));
+    }
+    k.vel.y += 0.1;
+    k.vel.mul(0.98);
+    k.pos.add(k.vel);
+    color("black");
+    const c = char("b", k.pos, {scale: {x: 0.5, y: 0.5}}).isColliding;
+    if (c.rect.black || c.char.b) {
+      color("transparent");
+      const cx = arc(k.pastPos.x, k.pos.y, 3).isColliding;
+      const cy = arc(k.pos.x, k.pastPos.y, 3).isColliding;
+      // may desire to comment this out later
+      if (!(cx.rect.black || cx.char.b)) {
+        reflect(k, k.vel.x > 0 ? -PI : 0);
+      }
+      if (!(cy.rect.black || cy.char.b)) {
+        reflect(k, k.vel.y > 0 ? -PI / 2 : PI / 2);
+      }
+    }
+    if (c.char.a) {
+      reflect(k, PI / 2);
+    }
+    if (c.rect.cyan) {
+      reflect(k, k.pos.x < 50 ? 0 : PI, "cyan");
+    }
+    color("transparent");
+    while (k.pos.y + k.vel.y > pot.pos.y - 3)
+    {
+      if (k.vel.y > 0) k.vel.y *= -0.8;
+      k.pos.y += -0.1;
     }
   })
 }
