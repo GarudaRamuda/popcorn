@@ -53,6 +53,7 @@ let completeTicks;
 let scr;
 let cornSpawned;
 let initTicks;
+let pAngle;
 
 function update() {  
   if (!ticks) {
@@ -81,6 +82,7 @@ function update() {
     nextFlameTicks = 30;
     nextPopTicks = 30;
     multiplier = difficulty;
+    pAngle = 0;
     rot1Complete = false;
     rot1Ticks = 0;
     rot2Complete = false;
@@ -199,8 +201,11 @@ function update() {
   // this is where we can actually handle moving and drawing the flame particles we spawned
   remove(flameArray, (f) => {
     // adjust the flames position using its velocity
-    // draw a box at flame's current position
-    box(vec(f.pos).add(0, scr), 3);
+
+    color("yellow");
+    particle(50, 99, 1, .7, pAngle + PI);
+    color("red");
+    particle(50, 102, 1, .7, sin(0.2));
 
     // also have room to mess with the flame's velocity; apply random scalars to simulate
     // air friction or air currents; could also use a sin() or cos() to generate wave motion
