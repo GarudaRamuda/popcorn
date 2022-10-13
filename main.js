@@ -35,7 +35,6 @@ let preCooking;
 let cooking;
 let postCooking;
 let cornCooked;
-let catchTimer;
 let cornLost;
 /** @type {{pos: Vector, pastPos: Vector, vel: Vector}} */
 let kernelArray;
@@ -49,7 +48,11 @@ let multiplier;
 let rot1Complete;
 let rot1Ticks;
 let rot2Complete;
+let nextCornTicks;
+let completeTicks;
 let scr;
+let cornSpawned;
+let initTicks;
 
 function update() {  
   if (!ticks) {
@@ -73,6 +76,7 @@ function update() {
     cornLost = 0;
     kernelArray = [];
     cookedArray = [];
+    catchArray = [];
     flameArray = [];
     nextFlameTicks = 30;
     nextPopTicks = 30;
@@ -81,8 +85,12 @@ function update() {
     rot1Ticks = 0;
     rot2Complete = false;
     scr = 0;
+    nextCornTicks = 0;
+    cornSpawned = 0;
+    completeTicks = 0;
+    initTicks = 0;
 
-    for (i = 0; i < 9; i++) {
+    for (i = 0; i < 15; i++) {
       kernelArray.push({
         pos: vec(50 + rnd(-potWidth / 2, potWidth / 2),70 + rnd(-10, 10)),
         pastPos: vec(50, 50),
@@ -91,17 +99,20 @@ function update() {
     }
     needsInit = false;
   }
-
-  if (input.isPressed && ticks > 60) {
-    if (postCooking) {
-      // move lid right
+  initTicks++;
+  if (input.isPressed && initTicks > 60) {
+    if (rot2Complete) {
+      // move lid left
+      
+      lid.anchor.x = Math.max(lid.anchor.x - (0.8 * difficulty), 42);
     } else if (!cooking) {
       cooking = true;
       preCooking = false;
     }
   }
-  if (postCooking && !(input.isPressed)) {
-    // move lid left
+  if (rot2Complete && !(input.isPressed)) {
+    // move lid right
+    lid.anchor.x = Math.min(lid.anchor.x + (0.8 * difficulty), 120);
   }
   if (input.isJustReleased && cooking) {
     cooking = false;
@@ -146,29 +157,45 @@ function update() {
       rot1Complete = true;
     }
     if (scr < 50 && rot1Ticks > 50) scr += 0.1 + scr / 10;
-    if (rot1Complete && rot1Ticks > 50) {
+    if (rot1Complete && rot1Ticks > 50 && !rot2Complete) {
       if (lid.anchor.x < 80) {
         lid.anchor.x += 1;
         lid.anchor.x = Math.min(lid.anchor.x, 80);
+      } else {
+        rot2Complete = true;
       }
       if (lid.angle > -PI) {
         lid.angle -= 0.075;
         lid.angle = Math.max(lid.angle, -PI);
+      } 
+    }
+    if (rot2Complete && cornSpawned < cornCooked) {
+      ++nextCornTicks;
+      if (nextCornTicks > 60) {
+        nextCornTicks = 0;
+        ++cornSpawned;
+        catchArray.push({
+          pos: vec(rnd(20, 80), (-10)),
+          vel: vec(rnd(-0.5, 0.5), 0),
+        })
       }
-    }   
+    }
   }
   color("light_cyan");
   line(vec(pot.pos).add(0, scr), vec(pot.pos).add(potWidth, scr));
   color("cyan");
-  line(vec(pot.pos).add(0, scr), vec(pot.pos).add(0, -potHeight + scr));
-  line(vec(pot.pos).add(potWidth, scr), vec(pot.pos).add(potWidth, -potHeight + scr));
+  if (!rot2Complete) line(vec(pot.pos).add(0, scr), vec(pot.pos).add(0, -potHeight + scr));
+  if (!rot2Complete) line(vec(pot.pos).add(potWidth, scr), vec(pot.pos).add(potWidth, -potHeight + scr));
   lid.pos = vec(lid.anchor).addWithAngle(lid.angle, potWidth / 2);
-  char("a", vec(lid.pos).add(0, Math.min(scr, 20)), 
+  char("a", vec(lid.pos).add(0, Math.min(scr, 30)), 
     {
-      scale: {x: 12 * Math.cos(lid.angle) - 3 * Math.sin(lid.angle), y: 12 * Math.sin(lid.angle) + 3 * Math.cos(lid.angle)},
+      scale: {x: 9.5 * Math.cos(lid.angle) - 3 * Math.sin(lid.angle), y: 12 * Math.sin(lid.angle) + 3 * Math.cos(lid.angle)},
       rotation: lid.angle / (PI / 2),
     });
-
+  color("transparent");
+  if (rot2Complete) color("cyan");
+  // supremely evil collision hack (do not attempt)
+  line(vec(lid.anchor.x - 3, lid.anchor.y + 29), vec(lid.anchor.x - 57, lid.anchor.y + 29));
   // this is where we can actually handle moving and drawing the flame particles we spawned
   remove(flameArray, (f) => {
     // adjust the flames position using its velocity
@@ -191,7 +218,7 @@ function update() {
     let kernelDim = 3;
     k.pastPos.set(k.pos);
     k.vel.y += 0.1;
-    k.vel.mul(0.98);
+    k.vel.mul(0.96);
     k.pos.add(k.vel);
     color("black");
     const c = box(k.pos, kernelDim).isColliding;
@@ -266,6 +293,34 @@ function update() {
 
     if (k.pos.y < -10 || k.pos.y > 110) return true;
   })
+
+  remove(catchArray, (ke) => {
+    ke.vel.y += 0.1 * (1 + difficulty / 5);
+    ke.vel.mul(0.98);
+    ke.pos.add(ke.vel);
+    color("black");
+    const c = char("b", ke.pos, {scale: {x: 0.5, y: 0.5}}).isColliding;
+    if (c.rect.cyan) {
+      addScore(multiplier, ke.pos);
+      multiplier *= 2;
+      play("lucky");
+      return true;
+    }
+
+    if (ke.pos.y > 110) {
+      ++cornLost;
+      return true;
+    }
+  })
+
+  if (cornCooked > 0 && cornLost >= cornCooked || cornLost > (Math.max(8 - difficulty, 1))) {
+    end();
+  }
+
+  if (cornSpawned == cornCooked && postCooking && catchArray.length <= 0) ++completeTicks;
+  if (completeTicks > 180) {
+    needsInit = true;
+  }
 }
 // Original code by Kenta Cho
 // https://github.com/abagames
