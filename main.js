@@ -203,9 +203,9 @@ function update() {
     // adjust the flames position using its velocity
 
     color("yellow");
-    particle(50, 99, 1, .7, pAngle + PI);
+    particle(50, 99 + scr, 1, .7, pAngle + PI);
     color("red");
-    particle(50, 102, 1, .7, sin(0.2));
+    particle(50, 102 + scr, 1, .7, sin(0.2));
 
     // also have room to mess with the flame's velocity; apply random scalars to simulate
     // air friction or air currents; could also use a sin() or cos() to generate wave motion
@@ -307,7 +307,7 @@ function update() {
     const c = char("b", ke.pos, {scale: {x: 0.5, y: 0.5}}).isColliding;
     if (c.rect.cyan) {
       addScore(multiplier, ke.pos);
-      multiplier *= 2;
+      multiplier *= 1.1;
       play("lucky");
       return true;
     }
