@@ -47,6 +47,7 @@ let nextFlameTicks;
 let nextPopTicks;
 let multiplier;
 let rot1Complete;
+let rot1Ticks;
 let rot2Complete;
 let scr;
 
@@ -77,6 +78,7 @@ function update() {
     nextPopTicks = 30;
     multiplier = difficulty;
     rot1Complete = false;
+    rot1Ticks = 0;
     rot2Complete = false;
     scr = 0;
 
@@ -115,10 +117,13 @@ function update() {
     // pop corn
     if (nextPopTicks <= 0) {
       nextPopTicks = rndi(30, 60);
-      let pop = kernelArray.pop();
-      pop.vel = vec(pop.vel).add(rnd(-4, 4), rnd(-6, -4));
-      cookedArray.push(pop);
-      ++cornCooked;
+      let pop = null;
+      if (kernelArray.length >= 1) {
+        pop = kernelArray.pop()
+        pop.vel = vec(pop.vel).add(rnd(-4, 4), rnd(-6, -4));
+        cookedArray.push(pop);
+        ++cornCooked;
+      }
     }
     // we also perform the spawning (not handling!) of all flame particles in this block
     if (nextFlameTicks <= 0) {
@@ -132,6 +137,7 @@ function update() {
   }
   
   if (postCooking) {
+    if (rot1Complete) ++rot1Ticks;
     // rotate lid
     if (lid.anchor.x > 14 && !rot1Complete) lid.anchor.x -= 0.5;
     if (lid.angle > -PI / 2) {
@@ -139,8 +145,8 @@ function update() {
     } else {
       rot1Complete = true;
     }
-    if (scr < 50 && rot1Complete) scr += 0.1 + scr / 10;
-    if (rot1Complete) {
+    if (scr < 50 && rot1Ticks > 50) scr += 0.1 + scr / 10;
+    if (rot1Complete && rot1Ticks > 50) {
       if (lid.anchor.x < 80) {
         lid.anchor.x += 1;
         lid.anchor.x = Math.min(lid.anchor.x, 80);
@@ -223,6 +229,11 @@ function update() {
     {
       k.vel = vec(k.vel).add(rnd(-2.5, 2.5), rnd(-3, -2));
     }
+    if (rot1Complete) {
+      if (rot1Ticks == 1) k.vel.x = k.vel.x + rnd(-2, 2);
+      k.vel.y += -0.5;
+      k.vel.y = Math.min(k.vel.y, -6);
+    }
     k.vel.y += 0.1;
     k.vel.mul(0.98);
     k.pos.add(k.vel);
@@ -267,7 +278,8 @@ function reflect(b, a, c) {
     color("transparent");
     for (let i = 0; i < 9; i++) {
       b.pos.addWithAngle(a, 1);
-      if (!arc(b.pos, ballRadius).isColliding.rect[c]) {
+      if (!arc(b.pos, 3).isColliding.rect[c]) {
+  lid.pos.y += scr;
         break;
       }
     }
